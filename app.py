@@ -11,16 +11,7 @@ import matplotlib.pyplot as plt
 
 conn = sqlite3.connect("complaints.db")
 cursor = conn.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS complaints(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content TEXT,
-    category TEXT
-)
-               
-""")
 
-conn.commit()
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS ai_predictions(
@@ -54,38 +45,8 @@ def load_predictions():
     return prediction_df
 
 
-def save_complaint(content, category):
-    cursor.execute(
-        """
-        INSERT INTO complaints
-        (content, category)
-        VALUES (?, ?)
-        """,
-        (content, category)
-    )
-
-    conn.commit()
 
 
-def classify_complaint(text):
-
-    if "대출" in text or "금리" in text or "상환" in text:
-        return "대출"
-
-    elif "카드" in text or "결제" in text or "취소" in text:
-        return "카드"
-
-    elif "보험" in text or "보험금" in text:
-        return "보험"
-
-    elif "펀드" in text or "투자" in text:
-        return "투자"
-
-    elif "계좌" in text or "이체" in text:
-        return "은행업무"
-
-    else:
-        return "기타"
 
 
 
@@ -108,6 +69,9 @@ def summarize_complaint(text):
     return "주요 키워드 : " + ",".join(summary)
 
 
+st.title("금융 민원 분석 AI 대시보드")
+st.write("안녕하세요. 금융 민원 데이터 분석 프로그램입니다")
+
 st.markdown("""
 ### 프로젝트 소개
 
@@ -119,15 +83,15 @@ AI를 활용하여 민원 유형을 자동 분류하는
 
 - 민원 데이터 조회
 - 키워드 분석
-- 민원 유형 분류
-- AI 기반 자동 분류
+- AI 기반 민원 유형 분류
+- 예측 확률 시각화
 - 분류 결과 저장 및 조회
+- 워드클라우드 시각화
 """)
 
 
 
-st.title("금융 민원 분석 AI 대시보드")
-st.write("안녕하세요. 금융 민원 데이터 분석 프로그램입니다")
+
 
 df = pd.read_csv("data/complaints.csv")
 model = joblib.load("complaints_model.pkl")
@@ -176,26 +140,6 @@ keyword_df = pd.DataFrame(
 
 st.dataframe(keyword_df)
 
-
-
-st.subheader("민원 자동 분류")
-
-user_input = st.text_area(
-    "민원 내용을 입력하세요"
-)
-
-if st.button("분류하기"):
-
-    result = classify_complaint(user_input)
-
-    save_complaint(
-        user_input,
-        result
-    )
-
-    st.success(
-        f"예상 민원 유형 : {result}"
-    )
 
 
 
