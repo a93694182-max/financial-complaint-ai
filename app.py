@@ -192,6 +192,18 @@ if st.button("예측 기록 불러오기"):
         st.bar_chart(prediction_count)
 
 
+        csv = prediction_df.to_csv(
+            index=False
+        ).encode("utf-8-sig")
+
+        st.download_button(
+            label="예측 기록 다운로드",
+            data=csv,
+            file_name="prediction_history.csv",
+            mime="text/csv"
+        )        
+
+
 
 st.subheader("민원 유형별 TOP 키워드")
 
