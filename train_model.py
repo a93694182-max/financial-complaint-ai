@@ -9,6 +9,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
+
+import matplotlib.pyplot as plt
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+
 df = pd.read_csv("data/complaints.csv")
 
 X = df["content"]
@@ -83,7 +89,7 @@ fig, ax = plt.subplots(figsize=(10, 8))
 
 disp.plot(
     ax=ax,
-    xticks_rotation=45
+    xticks_rotation='horizontal'
 )
 
 plt.title("Confusion Matrix")
