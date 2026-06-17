@@ -1,7 +1,9 @@
 import pandas as pd 
 import joblib 
-
 import matplotlib.pyplot as plt
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -34,14 +36,36 @@ vectorizer = TfidfVectorizer(
 X_train_vectorized = vectorizer.fit_transform(X_train)
 X_test_vectorized = vectorizer.transform(X_test)
 
-model = MultinomialNB()
+models = {
+    "Naive Bayes": MultinomialNB(),
+    "Logistic Regression": LogisticRegression(max_iter=1000)
+}
 
-model.fit(
-    X_train_vectorized,
-    y_train
-)
+best_model = None
+best_accuracy = 0
+best_model_name = ""
 
-print("학습 완료")
+for model_name, model in models.items():
+    model.fit(X_train_vectorized, y_train)
+
+    y_pred = model.predict(X_test_vectorized)
+
+    accuracy = accuracy_score(y_test, y_pred)
+
+    print(model_name, "정확도:", round(accuracy * 100, 2), "%")
+
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_model = model
+        best_model_name = model_name
+        best_y_pred = y_pred
+
+print("최고 성능 모델:", best_model_name)
+print("최고 정확도:", round(best_accuracy * 100, 2), "%")
+
+model = best_model
+y_pred = best_y_pred
+accuracy = best_accuracy
 
 test_text = ["대출 금리가 너무 높고 상환이 어렵습니다"]
 test_vector = vectorizer.transform(test_text)
@@ -54,20 +78,6 @@ joblib.dump(vectorizer, "vectorizer.pkl")
 
 print("모델 저장 완료")
 
-y_pred = model.predict(
-    X_test_vectorized
-)
-
-accuracy = accuracy_score(
-    y_test,
-    y_pred
-)
-
-print(
-    "정확도:",
-    round(accuracy * 100, 2),
-    "%"
-)
 
 cm =confusion_matrix(
     y_test,

@@ -52,8 +52,15 @@ def load_predictions():
 
 def predict_complaint(text):
     text_vector = vectorizer.transform([text])
+
     prediction = model.predict(text_vector)[0]
     probabilities = model.predict_proba(text_vector)[0]
+
+    max_prob = max(probabilities)
+
+    if max_prob < 0.4:
+        prediction = "기타"
+
     return prediction, probabilities
 
 
