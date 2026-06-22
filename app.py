@@ -5,7 +5,16 @@ import sqlite3
 import joblib
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt 
+import matplotlib
 
+st.set_page_config(
+    page_title="금융 민원 분석 AI",
+    page_icon="💰",
+    layout="wide"
+)
+
+matplotlib.rc('font', family='Malgun Gothic')
+plt.rcParams['axes.unicode_minus'] = False
 
 
 
@@ -37,12 +46,24 @@ def save_prediction(content, prediction):
     )
     conn.commit()
 
+
+
+
 def load_predictions():
     prediction_df = pd.read_sql_query(
         "SELECT * FROM ai_predictions",
         conn
     )
     return prediction_df
+
+
+
+def delete_predictions():
+    cursor.execute(
+        "DELETE FROM ai_predictions"
+    )
+    conn.commit()
+
 
 
 
@@ -76,26 +97,23 @@ def summarize_complaint(text):
     return "주요 키워드 : " + ",".join(summary)
 
 
-st.title("금융 민원 분석 AI 대시보드")
-st.write("안녕하세요. 금융 민원 데이터 분석 프로그램입니다")
+
 
 st.markdown("""
-### 프로젝트 소개
-
-본 프로젝트는 금융 민원 데이터를 분석하고
-AI를 활용하여 민원 유형을 자동 분류하는
-대시보드입니다.
-
-주요 기능
-
-- 민원 데이터 조회
-- 키워드 분석
-- AI 기반 민원 유형 분류
-- 예측 확률 시각화
-- 분류 결과 저장 및 조회
-- 워드클라우드 시각화
+# 💰 금융 민원 분석 AI 대시보드
+AI Hub 금융/보험 민원 데이터를 활용한 민원 분류·분석 서비스입니다.
 """)
 
+
+
+
+with st.expander("프로젝트 소개 보기"):
+    st.markdown("""
+    - AI Hub 금융/보험 민원 데이터 29,490건 활용
+    - TF-IDF + Logistic Regression 기반 분류
+    - 예측 기록 SQLite 저장
+    - 키워드 분석 및 워드클라우드 제공
+    """)
 
 
 
@@ -103,6 +121,19 @@ AI를 활용하여 민원 유형을 자동 분류하는
 df = pd.read_csv("data/complaints.csv")
 model = joblib.load("complaints_model.pkl")
 vectorizer = joblib.load("vectorizer.pkl")
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("전체 민원 수", f"{len(df):,}건")
+col2.metric("분류 카테고리", f"{df['label'].nunique()}개")
+col3.metric("모델 정확도", "65.74%")
+
+
+
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 
 
@@ -130,37 +161,85 @@ st.dataframe(filtered_df)
 
 
 
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+
 
 st.subheader("민원 유형별 개수")
+
 label_count = df["label"].value_counts()
-st.bar_chart(label_count)
 
-fig, ax = plt.subplots()
+desired_order = [
+    "상품 가입 및 해지",
+    "잔고 및 거래내역",
+    "사고 및 보상 문의",
+    "이체, 출금, 대출서비스"
+]
 
-ax.pie(
-    label_count,
-    labels=label_count.index,
-    autopct="%1.1f%%"
-)
+label_count = label_count.reindex(desired_order)
 
-ax.set_title("민원 유형 비율")
+col1, col2 = st.columns(2)
 
-st.pyplot(fig)
+with col1:
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    ax.bar(
+        label_count.index,
+        label_count.values,
+        width=0.4
+    )
+
+    ax.set_title(
+        "민원 유형별 개수",
+        fontsize=11
+    )
+
+    plt.xticks(rotation=15)
+
+    st.pyplot(fig)
+
+with col2:
+    fig, ax = plt.subplots(figsize=(4, 4))
+
+    ax.pie(
+        label_count,
+        labels=label_count.index,
+        autopct="%1.1f%%",
+        textprops={'fontsize': 8}
+    )
+
+    ax.set_title(
+        "민원 유형 비율",
+        fontsize=11
+    )
+
+    st.pyplot(fig)
+
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 
 
 st.subheader("키워드 TOP 10")
-text = " ".join(df["content"])
-words = text.split()
-counter = Counter(words)
-top10 = counter.most_common(10)
-keyword_df = pd.DataFrame(
-    top10,
-    columns=["키워드", "횟수"]
-)
+
+keyword_df = pd.read_csv("data/top_keywords.csv")
 
 st.dataframe(keyword_df)
 
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 
 
@@ -173,9 +252,17 @@ if st.button("요약하기"):
     st.info(f"요약 결과 : {summary}")
 
 
+
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+
+
 st.subheader("AI 민원 분류")
 ai_input = st.text_area("AI가 분류할 민원 내용을 입력하세요")
-
 
 
 if st.button("AI 분류하기"):
@@ -195,7 +282,19 @@ if st.button("AI 분류하기"):
     st.bar_chart(prob_df.set_index("유형"))
 
 
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+
 st.subheader("AI 예측 기록")
+
+if st.button("🗑️ 예측 기록 전체 삭제"):
+    delete_predictions()
+    st.success("예측 기록이 삭제되었습니다.")
+
 if st.button("예측 기록 불러오기"):
     prediction_df = load_predictions()
     st.dataframe(prediction_df)
@@ -219,41 +318,59 @@ if st.button("예측 기록 불러오기"):
 
 
 
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+
 st.subheader("민원 유형별 TOP 키워드")
 
 selected_label = st.selectbox(
     "분석할 민원 유형",
-    list(df["label"].unique())
+    list(df["label"].unique()),
+    key="keyword_label_select"
 )
 
-label_text = " ".join(
-    df[df["label"]==selected_label]["content"]
+label_keyword_df = pd.read_csv("data/label_keywords.csv")
+
+selected_keyword_df = label_keyword_df[
+    label_keyword_df["label"] == selected_label
+]
+
+st.dataframe(
+    selected_keyword_df[["키워드", "횟수"]]
 )
 
-words = label_text.split()
-counter = Counter(words)
-top_counter = counter.most_common(10)
-keyword_df = pd.DataFrame(
-    top_counter ,
-    columns=["키워드","횟수"]
-)
-st.dataframe(keyword_df)
+
+
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 
 
 
 st.subheader("민원 유형별 워드클라우드")
 
+word_freq = dict(
+    zip(
+        selected_keyword_df["키워드"],
+        selected_keyword_df["횟수"]
+    )
+)
+
 wordcloud = WordCloud(
-    font_path = "C:/Windows/Fonts/malgun.ttf",
-    width = 800,
-    height = 400,
+    font_path="C:/Windows/Fonts/malgun.ttf",
+    width=800,
+    height=400,
     background_color="white"
-).generate(label_text)
+).generate_from_frequencies(word_freq)
 
 fig, ax = plt.subplots()
 ax.imshow(wordcloud)
 ax.axis("off")
 
 st.pyplot(fig)
-
-
