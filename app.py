@@ -135,6 +135,20 @@ st.subheader("민원 유형별 개수")
 label_count = df["label"].value_counts()
 st.bar_chart(label_count)
 
+fig, ax = plt.subplots()
+
+ax.pie(
+    label_count,
+    labels=label_count.index,
+    autopct="%1.1f%%"
+)
+
+ax.set_title("민원 유형 비율")
+
+st.pyplot(fig)
+
+
+
 st.subheader("키워드 TOP 10")
 text = " ".join(df["content"])
 words = text.split()
